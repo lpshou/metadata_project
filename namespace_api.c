@@ -101,15 +101,18 @@ void user_create_string_completion(int rc, const char *name, const void *data)
  * @param rc
  * @param data
  * 利用全局变量flag_user_delete记录删除用户的返回状态
+ *
  */
 void user_delete_void_completion(int rc, const void *data)
 {
-    fprintf(stderr, "[%s]: rc = %d\n", (char*)(data==0?"null":data), rc);
-	//printf("rc: %d\n",rc);
+    //fprintf(stderr, "[%s]: rc = %d\n", (char*)(data==0?"null":data), rc);
+	printf("rc: %d\n",rc);
 	if(rc == ZOK)
 		flag_user_delete = SUCCEED_STATUS;
-	else
+	else if(rc == ZNOTEMPTY)
 		flag_user_delete = FAILED_STATUS;
+	else 
+		flag_user_delete = OTHER_STATUS;
 	printf("flag_user_delete: %d\n",flag_user_delete);
 }
 
@@ -252,7 +255,7 @@ int main(int argc, const char *argv[])
     //user_exist("efg");
 	//	user_create("abc");
 	int k;
-	k = user_delete("abc");
+	k = user_delete("xyz");
 	printf("return: %d\n",k);
   
 	//设置日志等级
