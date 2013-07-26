@@ -11,9 +11,9 @@
 #include <zookeeper.h>
 #include <zookeeper_log.h>
 #include "common.h"
-int flag_user_exist;
-int flag_user_create;
-int flag_user_delete;
+int flag_user_exist = 0;
+int flag_user_create = 0;
+int flag_user_delete = 0;
 void zktest_watcher_g(zhandle_t* zh, int type, int state, const char* path, void* watcherCtx)
 {
 	printf("==========================================\n");
@@ -87,7 +87,7 @@ void user_create_string_completion(int rc, const char *name, const void *data)
     //if (!rc) {
     //    fprintf(stderr, "\tname = %s\n", name);
     //}
-	if(rc ==ZOK)
+	if(rc == ZOK)
 		flag_user_create = SUCCEED_STATUS;
 	else if(rc == ZNODEEXISTS)
 		flag_user_create = FAILED_STATUS;
@@ -95,9 +95,22 @@ void user_create_string_completion(int rc, const char *name, const void *data)
 		flag_user_create = OTHER_STATUS;
 }
 
-void zktest_void_completion(int rc, const void *data)
+/**
+ * @brief user_delete_void_completion 删除用户的回调函数
+ *
+ * @param rc
+ * @param data
+ * 利用全局变量flag_user_delete记录删除用户的返回状态
+ */
+void user_delete_void_completion(int rc, const void *data)
 {
     fprintf(stderr, "[%s]: rc = %d\n", (char*)(data==0?"null":data), rc);
+	//printf("rc: %d\n",rc);
+	if(rc == ZOK)
+		flag_user_delete = SUCCEED_STATUS;
+	else
+		flag_user_delete = FAILED_STATUS;
+	printf("flag_user_delete: %d\n",flag_user_delete);
 }
 
 
@@ -214,18 +227,15 @@ int user_delete(const char *userName)
 	char *user_name = (char *)malloc(len+2);
 	sprintf(user_name,"/%s",userName);
 	user_name[len+1]='\0';
-	//printf("name:%s\n",user_name);
+	printf("name:%s\n",user_name);
 
 
-    ret = zoo_adelete(zkhandle, "/xyz", -1, zktest_void_completion, "adelete");
-    if (ret) {
-        fprintf(stderr, "Error %d for %s\n", ret, "adelete");
-        exit(EXIT_FAILURE);
-    }
+    zoo_adelete(zkhandle, user_name, -1, user_delete_void_completion, "adelete");
     // Wait for asynchronous zookeeper call done.
-    getchar();
+    //getchar();
+	sleep(1);
     zookeeper_close(zkhandle);
-
+	return flag_user_delete;
 }
 
 /**
@@ -240,7 +250,10 @@ int main(int argc, const char *argv[])
 {
     //user_exist("abc");
     //user_exist("efg");
-	user_create("abc");
+	//	user_create("abc");
+	int k;
+	k = user_delete("abc");
+	printf("return: %d\n",k);
   
 	//设置日志等级
 //	zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
